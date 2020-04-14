@@ -15,7 +15,7 @@ from poi.core.lr_scheduler import WarmupMultiFactorScheduler, LRSequential, Adva
 
 def train_net(config, **kwargs):
     cfg = importlib.import_module(config.replace(".py", "").replace("/", "."))
-    pGen, pKv, pData, pModel, pOpt, pTest, pIO, pMetric = cfg.get_config(stage="train")
+    pGen, pKv, pData, pModel, pOpt, pTest, pIO, pMetric = cfg.get_config(task="train")
     sym = pModel.train_symbol
     batch_size_per_gpu = pKv.batch_image
     batch_size = pKv.batch_image * len(pKv.gpus)
@@ -52,7 +52,7 @@ def train_net(config, **kwargs):
     in_shape = dict(train_data.provide_data + train_data.provide_label)
     in_shape = dict([(key, (batch_size_per_gpu,) + in_shape[key][1:]) for key in in_shape])
     _, inter_shape, _ = sym.get_internals().infer_shape(**in_shape)
-    inter_shape_dict = zip(sym.get_internals().list_outputs(), inter_shape)
+    inter_shape_dict = list(zip(sym.get_internals().list_outputs(), inter_shape))
     param_shape_dict = [i for i in inter_shape_dict if not i[0].endswith("output")]
     inter_out_shape_dict = [i for i in inter_shape_dict if i[0].endswith("output")]
     _, out_shape, _ = sym.infer_shape(**in_shape)
@@ -186,7 +186,7 @@ def train_net(config, **kwargs):
             wd=pOpt.optimizer.wd,
             learning_rate=current_lr,
             lr_scheduler=lr_scheduler,
-            rescale_grad=1.0,
+            rescale_grad=1.0 / (len(ctx) * kv.num_workers),
             clip_gradient=pOpt.optimizer.clip_gradient
         )
     logger.info("optimizer: {}".format(pOpt.optimizer.type))

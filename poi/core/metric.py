@@ -1,8 +1,6 @@
 import mxnet as mx
 import numpy as np
 
-from poi.ops.fuse.index_ops import heatmap2points
-
 
 class EvalMetricWithSummary(mx.metric.EvalMetric):
     def __init__(self, name, output_names=None, label_names=None, summary=None, **kwargs):
@@ -127,6 +125,7 @@ class HeatmapAcc(LossWithIgnore):
         self.thr = threshold
 
     def update(self, labels, preds):
+        from poi.ops.fuse.index_ops import heatmap2points
         heatmap = preds[0]
         ctx = heatmap.context
         target = labels[0].as_in_context(ctx)
@@ -140,12 +139,9 @@ class HeatmapAcc(LossWithIgnore):
         dist = mx.nd.norm((points - labels) / norm, axis=2)
         pos = (dist < self.thr) * target_weight
         num_target = mx.nd.sum(target_weight, axis=1)
-        # print("num_target", num_target)
         num_pos = mx.nd.sum(pos, axis=1)
-        # print("num_pos", num_pos)
         pos_metric = mx.nd.where(
             num_target > 0, num_pos / num_target, mx.nd.zeros_like(num_target, ctx=ctx))
-        # print("pos_metric", pos_metric)
         num_inst = mx.nd.sum(num_target > 0).asscalar()
         self.sum_metric += mx.nd.sum(pos_metric).asscalar()
         self.num_inst += num_inst

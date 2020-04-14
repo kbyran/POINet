@@ -411,40 +411,6 @@ class Rotate3DMatrix(Augmenter):
     def __call__(self, input_record):
         rp = self.p.rotation_p
         rf = self.p.rotation_factor
-        center_y = self.p.height * 0.5
-        center_x = self.p.width * 0.5
-        angle = np.clip(np.random.randn() * rf, -rf * 2, rf * 2) \
-            if np.random.uniform() <= rp else 0.0
-
-        affine = input_record["affine"]
-
-        theta = angle / 360 * 2 * np.pi
-        cos_theta = np.cos(theta)
-        sin_theta = np.sin(theta)
-        rotate = np.array([
-            [cos_theta, -sin_theta, center_x * (1 - cos_theta) + center_y * sin_theta],
-            [sin_theta, cos_theta, -center_x * sin_theta + center_y * (1 - cos_theta)],
-            [0, 0, 1]],
-            dtype="float32"
-        )
-        affine = rotate @ affine
-
-        input_record["affine"] = affine
-        input_record["angle"] = np.ones((1,)) * angle
-
-
-class Rotate3DMatrixV2(Augmenter):
-    """
-    input: affine, ndarray(3, 3)
-    output: affine, ndarray(3, 3)
-    """
-
-    def __init__(self, pRotate):
-        self.p = pRotate  # RotateParam
-
-    def __call__(self, input_record):
-        rp = self.p.rotation_p
-        rf = self.p.rotation_factor
         x1, y1, x2, y2 = input_record["gt_bbox"]
         center_x = (x1 + x2) * 0.5
         center_y = (y1 + y2) * 0.5
@@ -469,62 +435,6 @@ class Rotate3DMatrixV2(Augmenter):
 
 
 class Rescale3DMatrix(Augmenter):
-    """
-    input: affine, ndarray(3, 3)
-    output: affine, ndarray(3, 3)
-    """
-
-    def __init__(self, pRescale):
-        self.p = pRescale  # RescaleParam
-
-    def __call__(self, input_record):
-        sf = self.p.scaling_factor
-        center_y = self.p.height * 0.5
-        center_x = self.p.width * 0.5
-        scale = np.clip(np.random.randn() * sf + 1, 1 - sf, 1 + sf)
-
-        affine = input_record["affine"]
-
-        rescale = np.array([
-            [scale, 0, (1 - scale) * center_x],
-            [0, scale, (1 - scale) * center_y],
-            [0, 0, 1]],
-            dtype="float32"
-        )
-        affine = rescale @ affine
-
-        input_record["affine"] = affine
-
-
-class Rescale3DMatrixV2(Augmenter):
-    """
-    input: affine, ndarray(3, 3)
-    output: affine, ndarray(3, 3)
-    """
-
-    def __init__(self, pRescale):
-        self.p = pRescale  # RescaleParam
-
-    def __call__(self, input_record):
-        sf = self.p.scaling_factor
-        center_y = self.p.height * 0.5
-        center_x = self.p.width * 0.5
-        scale = 1.0 / np.clip(np.random.randn() * sf + 1, 1 - sf, 1 + sf)
-
-        affine = input_record["affine"]
-
-        rescale = np.array([
-            [scale, 0, (1 - scale) * center_x],
-            [0, scale, (1 - scale) * center_y],
-            [0, 0, 1]],
-            dtype="float32"
-        )
-        affine = rescale @ affine
-
-        input_record["affine"] = affine
-
-
-class Rescale3DMatrixV3(Augmenter):
     """
     input: affine, ndarray(3, 3)
     output: affine, ndarray(3, 3)
@@ -570,105 +480,6 @@ class Crop3DMatrix(Augmenter):
 
         x1, y1, x2, y2 = input_record["gt_bbox"]
         affine = input_record["affine"]
-
-        center_x = (x1 + x2) * 0.5
-        center_y = (y1 + y2) * 0.5
-        bbox_w = (x2 - x1) * bbox_expand
-        bbox_h = (y2 - y1) * bbox_expand
-
-        ratio = resize_w / resize_h  # float
-        if bbox_h * ratio > bbox_w:
-            bbox_w = bbox_h * ratio
-        elif bbox_w / ratio > bbox_h:
-            bbox_h = bbox_w / ratio
-
-        scale_w = resize_w / bbox_w  # float
-        scale_h = resize_h / bbox_h  # float
-
-        crop = np.array([
-            [scale_w, 0, -center_x * scale_w + resize_w * 0.5],
-            [0, scale_h, -center_y * scale_h + resize_h * 0.5],
-            [0, 0, 1]],
-            dtype="float32"
-        )
-
-        affine = crop @ affine
-
-        input_record["affine"] = affine
-
-
-class Crop3DMatrixV2(Augmenter):
-    """
-    input: gt_bbox, ndarray(4,)
-           affine, ndarray(3, 3)
-    output: affine, ndarray(3, 3)
-    """
-
-    def __init__(self, pCrop):
-        self.p = pCrop
-
-    def __call__(self, input_record):
-        bbox_expand = self.p.bbox_expand
-        resize_h = self.p.height
-        resize_w = self.p.width
-
-        x1, y1, x2, y2 = input_record["gt_bbox"]
-        affine = input_record["affine"]
-
-        center_x = (x1 + x2) * 0.5
-        center_y = (y1 + y2) * 0.5
-        bbox_w = (x2 - x1) * bbox_expand
-        bbox_h = (y2 - y1) * bbox_expand
-
-        # ratio = resize_w / resize_h  # float
-        # if bbox_h * ratio > bbox_w:
-        #     bbox_w = bbox_h * ratio
-        # elif bbox_w / ratio > bbox_h:
-        #     bbox_h = bbox_w / ratio
-
-        scale_w = resize_w / bbox_w  # float
-        scale_h = resize_h / bbox_h  # float
-
-        crop = np.array([
-            [scale_w, 0, -center_x * scale_w + resize_w * 0.5],
-            [0, scale_h, -center_y * scale_h + resize_h * 0.5],
-            [0, 0, 1]],
-            dtype="float32"
-        )
-
-        affine = crop @ affine
-
-        input_record["affine"] = affine
-
-
-class Crop3DMatrixV3(Augmenter):
-    """
-    input: gt_bbox, ndarray(4,)
-           affine, ndarray(3, 3)
-    output: affine, ndarray(3, 3)
-    """
-
-    def __init__(self, pCrop):
-        self.p = pCrop
-
-    def __call__(self, input_record):
-        bbox_expand = self.p.bbox_expand
-        resize_h = self.p.height
-        resize_w = self.p.width
-
-        x1, y1, x2, y2 = input_record["gt_bbox"].copy()
-        affine = input_record["affine"]
-        corners = [[x1, y1], [x1, y2], [x2, y1], [x2, y2]]
-        new_pts = []
-        for pt in corners:
-            new_pt = np.array([pt[0], pt[1], 1.]).T
-            new_pt = np.dot(affine[:2], new_pt)
-            new_pts.append(new_pt[:2])
-        new_pts = np.array(new_pts)
-        x1 = np.min(new_pts[:, 0])
-        x2 = np.max(new_pts[:, 0])
-        y1 = np.min(new_pts[:, 1])
-        y2 = np.max(new_pts[:, 1])
 
         center_x = (x1 + x2) * 0.5
         center_y = (y1 + y2) * 0.5

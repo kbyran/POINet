@@ -15,10 +15,10 @@ from poi.core.model import load_params
 from poi.core.module import Module
 
 
-def test_net(config, stage="val", epoch=None, **kwargs):
+def test_net(config, task="val", epoch=None, **kwargs):
     os.environ["MXNET_CUDNN_AUTOTUNE_DEFAULT"] = "0"
     cfg = importlib.import_module(config.replace(".py", "").replace("/", "."))
-    pGen, pKv, pData, pModel, pOpt, pTest, pIO, pMetric = cfg.get_config(stage=stage)
+    pGen, pKv, pData, pModel, pOpt, pTest, pIO, pMetric = cfg.get_config(task=task)
     sym = pModel.test_symbol
     image_sets = pData.image_set
 
@@ -77,17 +77,17 @@ def test_net(config, stage="val", epoch=None, **kwargs):
                 pTest.model.prefix, epoch or pTest.model.epoch)
             if pModel.process_weight is not None:
                 pModel.process_weight(sym, arg_params, aux_params)
-
             # merge batch normalization to speedup test
-            from poi.utils.graph_optimize import merge_bn
-            sym, arg_params, aux_params = merge_bn(sym, arg_params, aux_params)
-            sym.save(pTest.model.prefix + "_test.json")
+            if pModel.merge_bn:
+                from poi.utils.graph_optimize import merge_bn
+                sym, arg_params, aux_params = merge_bn(sym, arg_params, aux_params)
+                sym.save(pTest.model.prefix + "_test.json")
 
             # infer shape
             in_shape = dict(data.provide_data + data.provide_label)
             in_shape = dict([(key, (pGen.batch_image,) + in_shape[key][1:]) for key in in_shape])
             _, inter_shape, _ = sym.get_internals().infer_shape(**in_shape)
-            inter_shape_dict = zip(sym.get_internals().list_outputs(), inter_shape)
+            inter_shape_dict = list(zip(sym.get_internals().list_outputs(), inter_shape))
             param_shape_dict = [i for i in inter_shape_dict if not i[0].endswith("output")]
             inter_out_shape_dict = [i for i in inter_shape_dict if i[0].endswith("output")]
             _, out_shape, _ = sym.infer_shape(**in_shape)
@@ -147,8 +147,7 @@ def test_net(config, stage="val", epoch=None, **kwargs):
         all_outputs.sort(key=lambda r: r["rec_id"])
         all_outputs, db = pTest.process_output(all_outputs, db)
 
-        outputs_name = pTest.test_name if stage == "test" else pTest.val_name
-        # print(all_outputs[0].keys(), db[0].keys())
+        outputs_name = pTest.test_name if task == "test" else pTest.val_name
         for out, x in zip(all_outputs, db):
             if "pad" in x and x["pad"]:
                 continue
@@ -167,22 +166,20 @@ def test_net(config, stage="val", epoch=None, **kwargs):
                     result[name] = result[name].tolist()
                 elif isinstance(result[name], mx.nd.NDArray):
                     result[name] = result[name].asnumpy().tolist()
-                # else:
-                #     print(type(result[name]))
             results.append(result)
 
         t3_s = time.time()
         logger.info("convert to list format uses: %.1f" % (t3_s - t2_s))
 
-    if stage == "test":
-        # for result in results:
-        #     print([(k, type(v)) for k, v in result.items()])
+    if task == "test":
         import json
         json.dump(
             results,
             open("logs/{}/{}_result.json".format(pGen.name, pData.image_set[0]), "w"),
             sort_keys=True, indent=2)
+        logger.info("test done.")
     else:
         val = pTest.test_metric
         val.process(results, logger)
         val.summarize()
+        logger.info("val done.")
