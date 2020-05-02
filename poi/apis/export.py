@@ -13,7 +13,8 @@ from poi.infer.trt import TRTModel
 
 
 def mx2onnx(input_shapes, model_prefix, model_epoch, onnx_path):
-    from mxnet.contrib import onnx as onnx_mxnet
+    # load monkey patch for onnx converter
+    from poi.utils.onnx_patch import onnx_mxnet
     sym = mx.sym.load(model_prefix + "_export.json")
     arg_params, aux_params = load_params(model_prefix, model_epoch)
     params = dict()
