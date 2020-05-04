@@ -39,9 +39,9 @@ class Builder(object):
         index_uv_lowres = neck.get_index_uv_lowres(feat)
         u_lowres = neck.get_u_lowres(feat)
         v_lowres = neck.get_v_lowres(feat)
-        # dp_outputs = head.get_output(
-        #     ann_index_lowres, index_uv_lowres, u_lowres, v_lowres,
-        # )
+        ann_index_lowres, index_uv_lowres, u_lowres, v_lowres = head.get_output(
+            ann_index_lowres, index_uv_lowres, u_lowres, v_lowres
+        )
         outputs = mx.sym.Group(
             [rec_id, im_id, affine, ann_index_lowres, index_uv_lowres, u_lowres, v_lowres]
         )
@@ -57,9 +57,9 @@ class Builder(object):
         index_uv_lowres = neck.get_index_uv_lowres(feat)
         u_lowres = neck.get_u_lowres(feat)
         v_lowres = neck.get_v_lowres(feat)
-        # dp_outputs = head.get_output(
-        #     ann_index_lowres, index_uv_lowres, u_lowres, v_lowres,
-        # )
+        ann_index_lowres, index_uv_lowres, u_lowres, v_lowres = head.get_output(
+            ann_index_lowres, index_uv_lowres, u_lowres, v_lowres
+        )
         outputs = mx.sym.Group(
             [ann_index_lowres, index_uv_lowres, u_lowres, v_lowres]
         )
@@ -313,4 +313,7 @@ class Head(object):
         return seg_loss, index_uv_loss, u_loss, v_loss
 
     def get_output(self, ann_index_lowres, index_uv_lowres, u_lowres, v_lowres):
-        return ann_index_lowres, index_uv_lowres, u_lowres, v_lowres
+        return mx.sym.identity(ann_index_lowres, name="ann_index_lowres"), \
+            mx.sym.identity(index_uv_lowres, name="index_uv_lowres"), \
+            mx.sym.identity(u_lowres, name="u_lowres"), \
+            mx.sym.identity(v_lowres, name="v_lowres")

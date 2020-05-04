@@ -17,5 +17,8 @@ Please read [GETTING_STARTED.md](docs/GETTING_STARTED.md) for hands-on tutorial.
 ## Model Zoo
 Please check [MODEL_ZOO.md](docs/MODEL_ZOO.md) for models.
 
+## Visualization
+Please refer to [VISUALIZE.md](docs/VISUALIZE.md).
+
 ## License & disclaimer
 This project is under the Apache 2.0 license. The framework is based on [simpledet](https://github.com/TuSimple/simpledet/). Thanks for their great work!

@@ -151,4 +151,4 @@ class MultiHead(object):
         logits = self.get_logits(feature[xent_feature])
         outputs = mx.sym.sigmoid(logits)
 
-        return outputs
+        return mx.sym.identity(outputs, name="attribute")

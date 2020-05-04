@@ -1,0 +1,12 @@
+{
+    "image_a": {
+        "im_id": 0,
+        "image_url": "imgs/pitt_512_256.jpg",
+        "gt_bbox": [0, 0, 256, 512]
+    },
+    "image_b": {
+        "im_id": 1,
+        "image_url": "imgs/leo_512_256.jpg",
+        "gt_bbox": [0, 0, 256, 512]
+    }
+}

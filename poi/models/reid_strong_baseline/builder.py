@@ -202,4 +202,4 @@ class MultiHead(object):
         p = self.p
         output_feature = p.get_feature.feature
 
-        return feature[output_feature]
+        return mx.sym.identity(feature[output_feature], name="feature")

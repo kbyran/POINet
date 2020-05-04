@@ -4,9 +4,10 @@ import argparse
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Launcher")
     parser.add_argument("--task", default="train", type=str,
-                        choices=["train", "val", "export"], help="task to run")
+                        choices=["train", "val", "export", "visualize"], help="task to run")
     parser.add_argument("--config", required=True, help="config to load")
     parser.add_argument("--epoch", type=int, help="epoch to val or test")
+    parser.add_argument("--image", type=str, default="", help="image info")
     args = parser.parse_args()
 
     if args.task == "train":
@@ -18,3 +19,6 @@ if __name__ == "__main__":
     elif args.task == "export":
         from poi.apis.export import export_net
         export_net(config=args.config, epoch=args.epoch)
+    elif args.task == "visualize":
+        from poi.apis.visualize import visualize_net
+        visualize_net(config=args.config, epoch=args.epoch, image=args.image)

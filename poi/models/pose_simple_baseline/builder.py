@@ -117,4 +117,4 @@ class Head(object):
         max_idx, max_val = heatmap2points(
             mx.sym, heatmap, batch_size, num_joints, heatmap_height, heatmap_width)
 
-        return max_idx, max_val
+        return mx.sym.identity(max_idx, name="max_idx"), mx.sym.identity(max_val, name="max_val")

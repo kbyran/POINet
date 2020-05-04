@@ -19,8 +19,10 @@ class HostDeviceMem(object):
 
 
 class TRTModel(BaseModel):
-    def __init__(self, trt_path, ctx_id, dummy_inputs=None, logger=None):
-        BaseModel.__init__(self, dummy_inputs, logger)
+    def __init__(self, trt_path, ctx_id,
+                 batch_size=None, transforms=None, input_names=None,
+                 base_record=None, logger=None):
+        BaseModel.__init__(self, batch_size, transforms, input_names, base_record, logger)
         self.name = "TensorRT"
         self.init_model(trt_path, ctx_id)
 
@@ -53,12 +55,12 @@ class TRTModel(BaseModel):
 
         self.model = engine.create_execution_context()
         self.logger.info("Warmup up...")
-        self.dummy_predict_loops(10)
+        self.inference_loops(10)
 
-    def predict(self, **kwargs):
-        for name in kwargs:
+    def inference(self):
+        for name in self.inputs:
             # Transfer input data to page locked memory
-            np.copyto(self.input_buffs[name].host, kwargs[name].flatten())
+            np.copyto(self.input_buffs[name].host, self.inputs[name].flatten())
             # Transfer input data to the GPU.
             cuda.memcpy_htod_async(self.input_buffs[name].device,
                                    self.input_buffs[name].host, self.stream)

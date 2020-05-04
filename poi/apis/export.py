@@ -35,7 +35,7 @@ def onnx2trt(input_shapes, onnx_path, trt_path):
 
 def load_inputs(batch_size, transforms, input_names):
     inputs = {}
-    input_records = [{"im_id": i, "image_url": "imgs/sample_512_256.jpg",
+    input_records = [{"im_id": i, "image_url": "imgs/leo_512_256.jpg",
                       "gt_bbox": [0, 0, 256, 512]} for i in range(batch_size)]
     for r in input_records:
         for trans in transforms:
@@ -88,23 +88,25 @@ def export_net(config, epoch=None, **kwargs):
     trt_path = onnx2trt(input_shapes, onnx_path, trt_path)
     logger.info("TensorRT model {} is saved".format(trt_path))
 
-    model = MXModel(pTest.model.prefix, epoch or pTest.model.epoch, pKv.gpus[0], inputs, logger)
+    model = MXModel(pTest.model.prefix, epoch or pTest.model.epoch, pKv.gpus[0],
+                    pGen.batch_image, pIO.transform, pIO.data_name, None, logger)
     model.perf()
-    mx_outputs = model.get_dummpy_outputs()
+    mx_outputs = model.get_dummy_outputs()
 
     # test onnx
-    model = ONNXModel(onnx_path, inputs, logger)
+    model = ONNXModel(onnx_path, pGen.batch_image, pIO.transform, pIO.data_name, None, logger)
     model.perf()
-    onnx_outputs = model.get_dummpy_outputs()
+    onnx_outputs = model.get_dummy_outputs()
     if allclose(mx_outputs, onnx_outputs, logger):
         logger.info("Allclosed for converting MXNet model into ONNX")
     else:
         logger.info("Not allclosed for converting MXNet model into ONNX")
 
     # test tensorrt
-    model = TRTModel(trt_path, pKv.gpus[0], inputs, logger)
+    model = TRTModel(trt_path, pKv.gpus[0],
+                     pGen.batch_image, pIO.transform, pIO.data_name, None, logger)
     model.perf()
-    trt_outputs = model.get_dummpy_outputs()
+    trt_outputs = model.get_dummy_outputs()
     if allclose(mx_outputs, trt_outputs, logger):
         logger.info("Allclosed for converting MXNet model into TensorRT")
     else:

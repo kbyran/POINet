@@ -1,0 +1,7 @@
+{
+    "image": {
+        "im_id": 0,
+        "image_url": "imgs/pitt_512_256.jpg",
+        "gt_bbox": [0, 0, 256, 512]
+    }
+}

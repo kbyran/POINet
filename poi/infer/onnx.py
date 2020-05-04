@@ -3,8 +3,10 @@ import numpy as np
 
 
 class ONNXModel(BaseModel):
-    def __init__(self, onnx_path, dummy_inputs, logger):
-        BaseModel.__init__(self, dummy_inputs, logger)
+    def __init__(self, onnx_path,
+                 batch_size=None, transforms=None, input_names=None,
+                 base_record=None, logger=None):
+        BaseModel.__init__(self, batch_size, transforms, input_names, base_record, logger)
         self.name = "ONNX"
         self.init_model(onnx_path)
 
@@ -15,8 +17,8 @@ class ONNXModel(BaseModel):
         self.model = model
         self.input_names = model.get_inputs()[0].name
         self.logger.info("Warmup up...")
-        self.dummy_predict_loops(10)
+        self.inference_loops(10)
 
-    def predict(self, **kwargs):
-        outputs = self.model.run(None, kwargs)
+    def inference(self):
+        outputs = self.model.run(None, self.inputs)
         return {n.name: np.asarray(o) for n, o in zip(self.model.get_outputs(), outputs)}
